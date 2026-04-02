@@ -45,7 +45,7 @@ Before analyzing performance data, help users set up their Elasticsearch connect
    - If validation succeeds: proceed to config creation
 
 5. **Offer to create first analysis config**:
-   - Ask: "What would you like to analyze? (cluster-density-v2, node-density, or custom)"
+   - Ask: "What benchmark would you like to analyze? (e.g., cluster-density-v2, node-density, k8s-netperf)"
    - Use docs/examples/ as templates
    - Write config to user's current directory
 
@@ -108,24 +108,51 @@ When helping with Orion tasks, you should:
 - Help correlate infrastructure changes with performance impacts
 
 ### 5. Benchmark Type Expertise
-Orion supports multiple benchmark types with different data structures:
 
-**kube-burner benchmarks** (cluster-density-v2, node-density, etc.):
-- Index: `ripsaw-kube-burner-*`
+**Supported Benchmarks:**
+
+This skill has expertise in the following benchmark types. Each type has different data structures and configuration patterns:
+
+**kube-burner benchmarks** (use `ripsaw-kube-burner-*` index):
+- `cluster-density-v2`
+- `node-density`
+- `node-density-cni`
+- `node-density-heavy`
+- `udn-density-pods`
+- `virt-udn-density`
+- `virt-density`
+- `workers-scale`
+- `crd-scale`
+- `network-policy`
+- `rds-core`
+- `udn-bgp`
+- `egressip`
+
+Configuration pattern:
 - Nested structure: metricName → labels → value
-- Focus: Control plane, node resources, application metrics
+- Requires `metricName` field
 - Reference: `docs/kube-burner-patterns.md`
 
-**k8s-netperf benchmarks** (network performance):
-- Index: `k8s-netperf-*`
+**k8s-netperf benchmarks** (use `k8s-netperf-*` index):
+- `k8s-netperf` (profiles: TCP_STREAM, UDP_STREAM, TCP_RR, TCP_CRR)
+
+Configuration pattern:
 - Flat structure: direct fields (throughput, latency, etc.)
-- Focus: Network throughput, latency, CNI overhead
-- Profiles: TCP_STREAM, UDP_STREAM, TCP_RR, TCP_CRR
-- Reference: `docs/k8s-netperf-patterns.md`
 - **⚠️ KEY DIFFERENCES**:
   - Do NOT specify `aggregation` field (data is pre-aggregated)
   - Put `profile.keyword`, `hostNetwork`, `service` at **METRICS level** (not metadata)
   - Use quoted strings `"false"`/`"true"` for booleans (not YAML booleans)
+- Reference: `docs/k8s-netperf-patterns.md`
+
+**Other benchmark types:**
+- `ingress-perf`
+- `ols-load-generator`
+- `olm`
+- `kueue-operator-jobs`
+- `kueue-operator-jobs-shared`
+- `kueue-operator-pods`
+
+⚠️ Note: Configuration expertise is primarily focused on kube-burner and k8s-netperf patterns. For other benchmark types, general Orion configuration principles apply but specific metric patterns may differ.
 
 **CRITICAL**: Always identify the benchmark type first, as configuration patterns differ significantly!
 
@@ -145,7 +172,7 @@ tests:
     metadata:
       # Elasticsearch query filters to find test data
       platform: AWS|GCP|Azure|BareMetal
-      benchmark.keyword: cluster-density-v2|node-density|ingress
+      benchmark.keyword: cluster-density-v2|node-density|node-density-cni|workers-scale|...
       ocpVersion: "{{ version }}"
 
       # Node configuration (use node-config discovery to find appropriate values)
